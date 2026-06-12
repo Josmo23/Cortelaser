@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Herramientas Láser | Siluetas y B&N</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #f1f5f9;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .app-container {
+            max-width: 1300px;
+            width: 100%;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            background: #ffffffdd;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 1rem 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .tab-btn.active {
+            color: #0f172a;
+            border-bottom: 3px solid #3b82f6;
+            background: #f8fafc;
+        }
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+            animation: fade 0.2s ease;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(5px);} to { opacity: 1; transform: translateY(0);} }
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 1.5rem;
+            background: #fefce8;
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 1.2rem;
+        }
+        .upload-area:hover { border-color: #3b82f6; background: #f0f9ff; }
+        .file-label {
+            font-weight: 500;
+            color: #2563eb;
+            background: #e0f2fe;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        input[type="file"] { display: none; }
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .preview-card {
+            background: #f8fafc;
+            border-radius: 1.2rem;
+            padding: 0.8rem;
+            text-align: center;
+            flex: 1;
+            min-width: 220px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        canvas, .silhouette-preview canvas {
+            max-width: 100%;
+            max-height: 240px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+        }
+        .transparent-bg {
+            background-image: repeating-linear-gradient(45deg, #ccc 0px, #ccc 8px, #f0f0f0 8px, #f0f0f0 16px);
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        button {
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        button.primary { background: #2563eb; }
+        button.primary:hover { background: #1d4ed8; }
+        button.danger { background: #dc2626; }
+        button.danger:hover { background: #b91c1c; }
+        .slider-container {
+            background: #f1f5f9;
+            padding: 0.8rem;
+            border-radius: 1.2rem;
+            margin: 1rem 0;
+        }
+        .slider-container label { font-weight: 600; display: flex; justify-content: space-between; }
+        input[type="range"] { width: 100%; margin: 8px 0; }
+        .inline-check { display: flex; align-items: center; gap: 12px; margin: 8px 0; flex-wrap: wrap; }
+        .badge-info {
+            font-size: 0.75rem;
+            background: #e6f7ff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: #0c4a6e;
+            display: inline-block;
+        }
+        .support-btn {
+            background: #f97316;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+            font-size: 1rem;
+            padding: 12px;
+            border-radius: 60px;
+        }
+        .support-btn:hover { background: #ea580c; }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #64748b;
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        @media (max-width: 640px) {
+            .tab-btn { font-size: 0.85rem; padding: 0.8rem 0.2rem; }
+            .preview-card h4 { font-size: 0.9rem; }
+            button { padding: 6px 14px; font-size: 0.8rem; }
+        }
+        /* prevencion seleccion y copia */
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="tab1">🎨 B&N + Fondo</button>
+        <button class="tab-btn" data-tab="tab2">✂️ Silueta (sin fondo)</button>
+    </div>
+
+    <!-- PESTAÑA 1 -->
+    <div id="tab1" class="tab-content active">
+        <h2 style="margin-top:0;">🖼️ Blanco y negro + eliminar fondo</h2>
+        <div class="upload-area" id="up1">
+            <span class="file-label">📁 Subir imagen</span>
+            <input type="file" id="f1" accept="image/jpeg, image/png, image/webp, image/bmp">
+        </div>
+        <div class="btn-group"><button id="rmBgBtn" class="danger">🧹 Eliminar fondo auto</button></div>
+        <div class="slider-container">
+            <label>🎚️ Umbral líneas <span id="th1">140</span></label>
+            <input type="range" id="s1" min="0" max="255" value="140" step="1">
+            <div class="inline-check"><label><input type="checkbox" id="inv1"> Invertir</label></div>
+        </div>
+        <div class="preview-container">
+            <div class="preview-card"><h4>Original</h4><canvas id="cOri1"></canvas></div>
+            <div class="preview-card"><h4>Líneas + fondo limpio</h4><canvas id="cBnw"></canvas></div>
+        </div>
+        <div class="btn-group"><button id="procBtn1" class="primary">🔄 Aplicar</button><button id="dwnBtn1" disabled>⬇️ PNG (B&N)</button></div>
+        <div class="badge-info">✔️ Ajusta umbral para marcar objetos. "Eliminar fondo auto" limpia fondos claros.</div>
+    </div>
+
+    <!-- PESTAÑA 2: SILUETA -->
+    <div id="tab2" class="tab-content">
+        <h2 style="margin-top:0;">✂️ Silueta transparente (sin fondo)</h2>
+        <div class="upload-area" id="up2">
+            <span class="file-label">📂 Imagen para silueta</span>
+            <input type="file" id="f2" accept="image/jpeg, image/png, image/webp, image/bmp">
+        </div>
+        <div class="slider-container">
+            <label>🎚️ Sensibilidad silueta <span id="th2">128</span></label>
+            <input type="range" id="s2" min="0" max="255" value="128" step="1">
+            <div class="inline-check"><label><input type="checkbox" id="inv2"> Invertir</label><label><input type="checkbox" id="sm2"> Suavizado</label></div>
+            <button id="genSilBtn" class="primary" style="margin-top:6px;">✨ Generar silueta</button>
+        </div>
+        <div class="preview-container">
+            <div class="preview-card"><h4>Original</h4><canvas id="cOri2"></canvas></div>
+            <div class="preview-card"><h4>Silueta (fondo transparente)</h4><div style="background:repeating-linear-gradient(45deg,#ccc 0px,#ccc 8px,#f0f0f0 8px,#f0f0f0 16px); border-radius:12px; padding:4px;"><canvas id="cSil"></canvas></div></div>
+        </div>
+        <div class="btn-group"><button id="dwnSilBtn" disabled>⬇️ PNG silueta</button></div>
+        <div class="badge-info">🧩 La silueta se guarda con fondo transparente. Ajusta umbral para capturar la forma principal.</div>
+    </div>
+
+    <!-- Botón de apoyo al proyecto -->
+    <div style="padding: 0 1.5rem 1rem 1.5rem;">
+        <button id="supportBtn" class="support-btn">❤️ Apoyar al proyecto ❤️</button>
+    </div>
+    <footer>Herramientas Láser · Procesamiento local · Sin almacenamiento</footer>
+</div>
+
+<script>
+// ========== OFUSCACIÓN + PROTECCIÓN ANTICOPIA ==========
+(function(){
+    // Prevenir clic derecho, selección, copiar, cortar, atajos
+    document.addEventListener('contextmenu', function(e){ e.preventDefault(); return false; });
+    document.addEventListener('selectstart', function(e){ e.preventDefault(); return false; });
+    document.addEventListener('copy', function(e){ e.preventDefault(); return false; });
+    document.addEventListener('cut', function(e){ e.preventDefault(); return false; });
+    document.addEventListener('keydown', function(e){
+        if(e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S')){
+            e.preventDefault(); return false;
+        }
+        if(e.key === 'F12'){ e.preventDefault(); return false; }
+    });
+    // Ofuscación ligera: variables/funciones con nombres cortos y reemplazo de strings
+    // Asignar alias a elementos y lógica principal
+    const $ = (s)=>document.querySelector(s);
+    const $$ = (s)=>document.querySelectorAll(s);
+    // ---------- LOGICA TABLA 1 (B&N) ----------
+    let img1 = null, img2 = null;
+    let cnOri1 = $('#cOri1'), cnBw = $('#cBnw'), cnOri2 = $('#cOri2'), cnSil = $('#cSil');
+    let f1 = $('#f1'), f2 = $('#f2');
+    let up1 = $('#up1'), up2 = $('#up2');
+    let s1 = $('#s1'), th1v = $('#th1'), inv1 = $('#inv1');
+    let proc1 = $('#procBtn1'), dwn1 = $('#dwnBtn1'), rmBg = $('#rmBgBtn');
+    let s2 = $('#s2'), th2v = $('#th2'), inv2 = $('#inv2'), sm2 = $('#sm2'), genSil = $('#genSilBtn'), dwnSil = $('#dwnSilBtn');
+    
+    // funcion umbral pestaña1
+    function _a(){ if(!img1) return;
+        let w=img1.width,h=img1.height,mw=480,mh=400;
+        if(w>mw){ h=(h*mw)/w; w=mw; } if(h>mh){ w=(w*mh)/h; h=mh; }
+        cnOri1.width=w; cnOri1.height=h; cnOri1.getContext('2d').drawImage(img1,0,0,w,h);
+        let d=cnOri1.getContext('2d').getImageData(0,0,w,h), dat=d.data;
+        let t=parseInt(s1.value), iv=inv1.checked;
+        for(let i=0;i<dat.length;i+=4){
+            let g=0.2126*dat[i]+0.7152*dat[i+1]+0.0722*dat[i+2];
+            let v=(g>=t)?255:0; if(iv) v=255-v;
+            dat[i]=v; dat[i+1]=v; dat[i+2]=v;
+        }
+        cnBw.width=w; cnBw.height=h; cnBw.getContext('2d').putImageData(d,0,0);
+        dwn1.disabled=false;
+    }
+    function _b(){ if(!img1) return; s1.value=190; th1v.innerText="190"; inv1.checked=false; _a(); }
+    function _c(file){ if(!file) return; let r=new FileReader(); r.onload=(e)=>{ let i=new Image(); i.onload=()=>{ img1=i; _a(); }; i.src=e.target.result; }; r.readAsDataURL(file); }
+    f1.addEventListener('change',(e)=>{ if(e.target.files.length) _c(e.target.files[0]); });
+    up1.addEventListener('click',()=>f1.click());
+    s1.addEventListener('input',()=>{ th1v.innerText=s1.value; if(img1) _a(); });
+    inv1.addEventListener('change',()=>{ if(img1) _a(); });
+    proc1.addEventListener('click',()=>{ if(img1) _a(); });
+    rmBg.addEventListener('click',_b);
+    dwn1.addEventListener('click',()=>{ if(cnBw.width>0){ let l=document.createElement('a'); l.download='bn_fondo_limpio.png'; l.href=cnBw.toDataURL('image/png'); l.click(); } });
+    // drag drop tab1
+    up1.addEventListener('dragover',(e)=>{ e.preventDefault(); up1.style.borderColor='#3b82f6'; });
+    up1.addEventListener('dragleave',()=>{ up1.style.borderColor='#cbd5e1'; });
+    up1.addEventListener('drop',(e)=>{ e.preventDefault(); up1.style.borderColor='#cbd5e1'; let f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')){ f1.files=e.dataTransfer.files; _c(f); } });
+    
+    // ---------- LOGICA SILUETA (PESTAÑA 2) ----------
+    function _d(){ if(!img2) return;
+        let w=img2.width,h=img2.height,mw=480,mh=400;
+        if(w>mw){ h=(h*mw)/w; w=mw; } if(h>mh){ w=(w*mh)/h; h=mh; }
+        cnOri2.width=w; cnOri2.height=h; cnOri2.getContext('2d').drawImage(img2,0,0,w,h);
+        let tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h; tmp.getContext('2d').drawImage(img2,0,0,w,h);
+        let d=tmp.getContext('2d').getImageData(0,0,w,h), dat=d.data;
+        let t=parseInt(s2.value), iv=inv2.checked, sm=sm2.checked;
+        let out=new ImageData(w,h);
+        for(let i=0;i<dat.length;i+=4){
+            let g=0.2126*dat[i]+0.7152*dat[i+1]+0.0722*dat[i+2];
+            let isObj=(iv)?(g>=t):(g<t);
+            if(isObj){
+                out.data[i]=0; out.data[i+1]=0; out.data[i+2]=0; out.data[i+3]=255;
+            } else {
+                out.data[i]=0; out.data[i+1]=0; out.data[i+2]=0; out.data[i+3]=0;
+            }
+        }
+        if(sm){
+            let ww=w,hh=h,alpha=new Uint8Array(ww*hh);
+            for(let i=0;i<ww*hh;i++) alpha[i]=out.data[i*4+3];
+            let smAlpha=new Uint8Array(ww*hh);
+            for(let y=1;y<hh-1;y++) for(let x=1;x<ww-1;x++){
+                let nb=[];
+                for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ let idx=(y+dy)*ww+(x+dx); nb.push(alpha[idx]); }
+                nb.sort(); smAlpha[y*ww+x]=nb[4];
+            }
+            for(let i=0;i<ww*hh;i++) if(smAlpha[i]!==undefined) out.data[i*4+3]=smAlpha[i];
+        }
+        cnSil.width=w; cnSil.height=h; cnSil.getContext('2d').putImageData(out,0,0);
+        dwnSil.disabled=false;
+    }
+    function _e(file){ if(!file) return; let r=new FileReader(); r.onload=(e)=>{ let i=new Image(); i.onload=()=>{ img2=i; _d(); }; i.src=e.target.result; }; r.readAsDataURL(file); }
+    f2.addEventListener('change',(e)=>{ if(e.target.files.length) _e(e.target.files[0]); });
+    up2.addEventListener('click',()=>f2.click());
+    s2.addEventListener('input',()=>{ th2v.innerText=s2.value; if(img2) _d(); });
+    inv2.addEventListener('change',()=>{ if(img2) _d(); });
+    sm2.addEventListener('change',()=>{ if(img2) _d(); });
+    genSil.addEventListener('click',()=>{ if(img2) _d(); });
+    dwnSil.addEventListener('click',()=>{ if(cnSil.width>0){ let a=document.createElement('a'); a.download='silueta_transparente.png'; a.href=cnSil.toDataURL('image/png'); a.click(); } });
+    // drag drop tab2
+    up2.addEventListener('dragover',(e)=>{ e.preventDefault(); up2.style.borderColor='#3b82f6'; });
+    up2.addEventListener('dragleave',()=>{ up2.style.borderColor='#cbd5e1'; });
+    up2.addEventListener('drop',(e)=>{ e.preventDefault(); up2.style.borderColor='#cbd5e1'; let f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')){ f2.files=e.dataTransfer.files; _e(f); } });
+    
+    // Botón apoyo proyecto
+    let sp = $('#supportBtn');
+    if(sp){
+        sp.addEventListener('click',()=>{
+            window.open('https://link.mercadopago.com.mx/herramientaslaser', '_blank');
+        });
+    }
+    // tabs
+    let tbs = $$('.tab-btn'), cnts = $$('.tab-content');
+    tbs.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            let tid = btn.getAttribute('data-tab');
+            cnts.forEach(c=>c.classList.remove('active'));
+            tbs.forEach(t=>t.classList.remove('active'));
+            document.getElementById(tid).classList.add('active');
+            btn.classList.add('active');
+        });
+    });
+    // placeholders iniciales
+    function _f(){
+        let ctx=cnOri1.getContext('2d'); ctx.fillStyle='#eef2ff'; ctx.fillRect(0,0,cnOri1.width,cnOri1.height);
+        let ctx2=cnBw.getContext('2d'); ctx2.fillStyle='#eef2ff'; ctx2.fillRect(0,0,cnBw.width,cnBw.height);
+        let ctx3=cnOri2.getContext('2d'); ctx3.fillStyle='#eef2ff'; ctx3.fillRect(0,0,cnOri2.width,cnOri2.height);
+        let ctx4=cnSil.getContext('2d'); ctx4.clearRect(0,0,cnSil.width,cnSil.height);
+    }
+    _f();
+    // Ofuscación adicional: cambiar nombres internos (ya es difícil de leer)
+    window._ofs_ = true;
+})();
+</script>
+</body>
+</html>
